@@ -7,11 +7,11 @@ import {
   Image,
   TouchableOpacity,
 } from 'react-native';
+import CameraRoll from '@react-native-community/cameraroll';
 import {RNCamera} from 'react-native-camera';
-import {dirPicutures} from './dirStorage';
-// import RNFS from 'react-native-fs';
-import moment from 'moment';
-import Snackbar from 'react-native-snackbar';
+// import {dirPicutures} from './dirStorage';
+// import moment from 'moment';
+// import Snackbar from 'react-native-snackbar';
 
 console.log('working');
 
@@ -21,7 +21,6 @@ const PendingView = () => (
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: 'blue'
     }}>
     <Text style={{fontSize: 30, color: 'red'}}>Loading...</Text>
   </View>
@@ -29,59 +28,33 @@ const PendingView = () => (
 const RNFS = require('react-native-fs');
 const App = () => {
   const [image, setImage] = useState(null);
-  const saveImage = async filePath => {
+  const requestStoragePermission = async () => {
     try {
       const granted = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
         {
-          title: "Permission",
-          message: "swahiliPodcast needs to read storage "
+          title: 'Cool Photo App storage Permission',
+          message:
+            'Cool Photo App needs access to storage ' +
+            'so you can save the awesome pictures.',
+          buttonNeutral: 'Ask Me Later',
+          buttonNegative: 'Cancel',
+          buttonPositive: 'OK',
         }
       );
       if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-        try {
-          // set new image name and filepath
-          const newImageName = `${moment().format('DDMMYY_HHmmSSS')}.jpg`;
-          console.log(dirPicutures);
-          const newFilepath = `${dirPicutures}/${newImageName}`;
-          // move and save image to new filepath
-          const imageMoved = await moveAttachment(filePath, newFilepath);
-          console.log('image moved', imageMoved);
-          Snackbar.show({
-            text: 'Image Saved !!',
-          });
-        } catch (error) {
-          console.log(error);
-        }
+        console.log('You can use the Storage');
       } else {
-        console.log(
-          'Permission Denied!',
-          'You need to give  permission to see contacts',
-        );
+        console.log('storage permission denied');
       }
     } catch (err) {
-     console.log(err);
+      console.warn(err);
     }
   };
-  const moveAttachment = async (filePath, newFilepath) => {
-    return new Promise((resolve, reject) => {
-      RNFS.mkdir(dirPicutures)
-        .then(() => {
-          RNFS.moveFile(filePath, newFilepath)
-            .then(() => {
-              console.log('FILE MOVED', filePath, newFilepath);
-              resolve(true);
-            })
-            .catch(error => {
-              console.log('moveFile error', error);
-              reject(error);
-            });
-        })
-        .catch(err => {
-          console.log('mkdir error', err);
-          reject(err);
-        });
-    });
+  const saveImage = async path => {
+    CameraRoll.save(path, 'photo')
+      .then(res => console.warn(res))
+      .catch(err => console.warn(err));
   };
   const takePicture = async camera => {
     try {
@@ -106,11 +79,14 @@ const App = () => {
           />
           {console.log(image)}
           <TouchableOpacity
-            style={styles.button}
-            onPress={() => saveImage(image)}>
+            style={styles.button2}
+            onPress={() => {
+              requestStoragePermission();
+              saveImage(image);
+            }}>
             <Text>Save To Gallery</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.button} onPress={reTake}>
+          <TouchableOpacity style={styles.button2} onPress={reTake}>
             <Text>ReTake</Text>
           </TouchableOpacity>
         </View>
@@ -174,9 +150,16 @@ const styles = StyleSheet.create({
     flex: 0,
     backgroundColor: '#fff',
     padding: 20,
-    marginBottom: 30,
+    marginTop: 490,
     borderRadius: 25,
     // alignSelf: 'center',
+  },
+  button2: {
+    flex: 0,
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 25,
+    marginVertical: 15,
   },
   textP: {
     color: 'red',
@@ -185,7 +168,7 @@ const styles = StyleSheet.create({
   camText: {
     backgroundColor: '#E6425E',
     color: '#fff',
-    marginBottom: 30,
+    marginBottom: 5,
     width: '100%',
     textAlign: 'center',
     paddingVertical: 30,
@@ -198,7 +181,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   clicked: {
-    marginVertical: 130,
+    marginVertical: 100,
     width: 300,
     height: 300,
     borderColor: '#E6425E',
